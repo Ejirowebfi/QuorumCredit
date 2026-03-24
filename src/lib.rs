@@ -530,6 +530,10 @@ impl QuorumCreditContract {
 
     // ── Views ─────────────────────────────────────────────────────────────────
 
+    pub fn is_initialized(env: Env) -> bool {
+        env.storage().instance().has(&DataKey::Admin)
+    }
+
     pub fn get_token(env: Env) -> Address {
         env.storage()
             .instance()
@@ -1062,6 +1066,21 @@ mod tests {
         let client = QuorumCreditContractClient::new(&env, &contract_id);
 
         assert_eq!(client.get_admin(), admin);
+    }
+
+    #[test]
+    fn test_is_initialized() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let admin = Address::generate(&env);
+        let token_id = env.register_stellar_asset_contract_v2(admin.clone());
+        let contract_id = env.register_contract(None, QuorumCreditContract);
+        let client = QuorumCreditContractClient::new(&env, &contract_id);
+
+        assert!(!client.is_initialized());
+        client.initialize(&admin, &admin, &token_id.address(), &150);
+        assert!(client.is_initialized());
     }
 
     #[test]
